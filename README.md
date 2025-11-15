@@ -1,233 +1,212 @@
-# Public Transit Status with Apache Kafka
+# Optimizing Public Transportation with Apache Kafka
 
-In this project, you will construct a streaming event pipeline around Apache Kafka and its ecosystem. Using public data from the [Chicago Transit Authority](https://www.transitchicago.com/data/) we will construct an event pipeline around Kafka that allows us to simulate and display the status of train lines in real time.
+## Overview
 
-When the project is complete, you will be able to monitor a website to watch trains move from station to station.
+This project builds a real-time streaming system for the Chicago Transit Authority (CTA) using Apache Kafka and its ecosystem. The goal is to simulate and monitor the status of CTA train lines so that commuters can see live train movements, station activity, and ridership trends on a web dashboard.
 
-![Final User Interface](images/ui.png)
+The system ingests events such as train arrivals, turnstile entries, and weather conditions, processes them through stream processing and aggregation tools, and exposes a simple web UI to visualize the current state of the network.
 
+### Data Sources & Event Types
 
-## Prerequisites
+The system models several key data sources:
 
-The following are required to complete this project:
+#### Station Arrivals
+Each time a train arrives at a station, an event is emitted with:
 
-* Docker
-* Python 3.7
-* Access to a computer with a minimum of 16gb+ RAM and a 4-core CPU to execute the simulation
+Station ID
 
-## Description
+Train ID
 
-The Chicago Transit Authority (CTA) has asked us to develop a dashboard displaying system status for its commuters. We have decided to use Kafka and ecosystem tools like REST Proxy and Kafka Connect to accomplish this task.
+Direction
 
-Our architecture will look like so:
+Line color
 
-![Project Architecture](images/diagram.png)
+Train status
 
-### Step 1: Create Kafka Producers
-The first step in our plan is to configure the train stations to emit some of the events that we need. The CTA has placed a sensor on each side of every train station that can be programmed to take an action whenever a train arrives at the station.
+Previous station and direction
 
-To accomplish this, you must complete the following tasks:
+#### Turnstile Events
+Turnstiles at each station emit an event whenever a rider enters the system, including:
 
-1. Complete the code in `producers/models/producer.py`
-1. Define a `value` schema for the arrival event in `producers/models/schemas/arrival_value.json` with the following attributes
-	* `station_id`
-	* `train_id`
-	* `direction`
-	* `line`
-	* `train_status`
-	* `prev_station_id`
-	* `prev_direction`
-1. Complete the code in `producers/models/station.py` so that:
-	* A topic is created for each station in Kafka to track the arrival events
-	* The station emits an `arrival` event to Kafka whenever the `Station.run()` function is called.
-	* Ensure that events emitted to kafka are paired with the Avro `key` and `value` schemas
-1. Define a `value` schema for the turnstile event in `producers/models/schemas/turnstile_value.json` with the following attributes
-	* `station_id`
-	* `station_name`
-	* `line`
-1. Complete the code in `producers/models/turnstile.py` so that:
-	* A topic is created for each turnstile for each station in Kafka to track the turnstile events
-	* The station emits a `turnstile` event to Kafka whenever the `Turnstile.run()` function is called.
-	* Ensure that events emitted to kafka are paired with the Avro `key` and `value` schemas
+Station ID
 
-### Step 2: Configure Kafka REST Proxy Producer
-Our partners at the CTA have asked that we also send weather readings into Kafka from their weather hardware. Unfortunately, this hardware is old and we cannot use the Python Client Library due to hardware restrictions. Instead, we are going to use HTTP REST to send the data to Kafka from the hardware using Kafka's REST Proxy.
+Station name
 
-To accomplish this, you must complete the following tasks:
+Line color
 
-1. Define a `value` schema for the weather event in `producers/models/schemas/weather_value.json` with the following attributes
-	* `temperature`
-	* `status`
-1. Complete the code in `producers/models/weather.py` so that:
-	* A topic is created for weather events
-	* The weather model emits `weather` event to Kafka REST Proxy whenever the `Weather.run()` function is called.
-		* **NOTE**: When sending HTTP requests to Kafka REST Proxy, be careful to include the correct `Content-Type`. Pay close attention to the [examples in the documentation](https://docs.confluent.io/current/kafka-rest/api.html#post--topics-(string-topic_name)) for more information.
-	* Ensure that events emitted to REST Proxy are paired with the Avro `key` and `value` schemas
+#### Weather Events
+A simulated weather sensor periodically sends:
 
-### Step 3: Configure Kafka Connect
-Finally, we need to extract station information from our PostgreSQL database into Kafka. We've decided to use the [Kafka JDBC Source Connector](https://docs.confluent.io/current/connect/kafka-connect-jdbc/source-connector/index.html).
+Temperature
 
-To accomplish this, you must complete the following tasks:
+Current weather status (sunny, cloudy, etc.)
 
-1. Complete the code and configuration in `producers/connectors.py`
-	* Please refer to the [Kafka Connect JDBC Source Connector Configuration Options](https://docs.confluent.io/current/connect/kafka-connect-jdbc/source-connector/source_config_options.html) for documentation on the options you must complete.
-	* You can run this file directly to test your connector, rather than running the entire simulation.
-	* Make sure to use the [Landoop Kafka Connect UI](http://localhost:8084) and [Landoop Kafka Topics UI](http://localhost:8085) to check the status and output of the Connector.
-	* To delete a misconfigured connector: `CURL -X DELETE localhost:8083/connectors/stations`
+#### Station Metadata (PostgreSQL → Kafka)
+The CTA station reference data (stop_id, station name, line colors, etc.) lives in PostgreSQL and is imported into Kafka using Kafka Connect.
 
-### Step 4: Configure the Faust Stream Processor
-We will leverage Faust Stream Processing to transform the raw Stations table that we ingested from Kafka Connect. The raw format from the database has more data than we need, and the line color information is not conveniently configured. To remediate this, we're going to ingest data from our Kafka Connect topic, and transform the data.
+All of these events are encoded using Avro schemas and registered in Schema Registry.
 
-To accomplish this, you must complete the following tasks:
+### System Architecture
 
-1. Complete the code and configuration in `consumers/faust_stream.py
+The project demonstrates a full streaming pipeline that includes:
 
-#### Watch Out!
+Producers
 
-You must run this Faust processing application with the following command:
+Kafka Connect (JDBC Source)
 
-`faust -A faust_stream worker -l info`
+Stream Processing with Faust
 
-### Step 5: Configure the KSQL Table
-Next, we will use KSQL to aggregate turnstile data for each of our stations. Recall that when we produced turnstile data, we simply emitted an event, not a count. What would make this data more useful would be to summarize it by station so that downstream applications always have an up-to-date count
+Aggregation with KSQL
 
-To accomplish this, you must complete the following tasks:
+Consumers and Web Application
 
-1. Complete the queries in `consumers/ksql.py`
+#### At a high level:
 
-#### Tips
+Producers publish events into Kafka topics.
 
-* The KSQL CLI is the best place to build your queries. Try `ksql` in your workspace to enter the CLI.
-* You can run this file on its own simply by running `python ksql.py`
-* Made a mistake in table creation? `DROP TABLE <your_table>`. If the CLI asks you to terminate a running query, you can `TERMINATE <query_name>`
+Kafka Connect continuously ingests static metadata from PostgreSQL.
 
+Faust transforms and normalizes station metadata into a convenient format.
 
-### Step 6: Create Kafka Consumers
-With all of the data in Kafka, our final task is to consume the data in the web server that is going to serve the transit status pages to our commuters.
+KSQL aggregates turnstile events into station-level counts.
 
-To accomplish this, you must complete the following tasks:
+A Python consumer layer maintains in-memory models for lines, stations, and weather and powers the transit status web page.
 
-1. Complete the code in `consumers/consumer.py`
-1. Complete the code in `consumers/models/line.py`
-1. Complete the code in `consumers/models/weather.py`
-1. Complete the code in `consumers/models/station.py`
+### Components
+1. Producers
 
-### Documentation
-In addition to the course content you have already reviewed, you may find the following examples and documentation helpful in completing this assignment:
+Custom Python producers generate:
 
-* [Confluent Python Client Documentation](https://docs.confluent.io/current/clients/confluent-kafka-python/#)
-* [Confluent Python Client Usage and Examples](https://github.com/confluentinc/confluent-kafka-python#usage)
-* [REST Proxy API Reference](https://docs.confluent.io/current/kafka-rest/api.html#post--topics-(string-topic_name))
-* [Kafka Connect JDBC Source Connector Configuration Options](https://docs.confluent.io/current/connect/kafka-connect-jdbc/source-connector/source_config_options.html)
+Arrival events on per-station topics (for example, one topic per station for arrivals).
 
-## Directory Layout
-The project consists of two main directories, `producers` and `consumers`.
+Turnstile events for each station turnstile.
 
-The following directory layout indicates the files that the student is responsible for modifying by adding a `*` indicator. Instructions for what is required are present as comments in each file.
+Weather events via Kafka REST Proxy, simulating the behavior of legacy hardware that can only communicate over HTTP.
 
-```
-* - Indicates that the student must complete the code in this file
+Each producer:
 
-├── consumers
-│   ├── consumer.py *
-│   ├── faust_stream.py *
-│   ├── ksql.py *
-│   ├── models
-│   │   ├── lines.py
-│   │   ├── line.py *
-│   │   ├── station.py *
-│   │   └── weather.py *
-│   ├── requirements.txt
-│   ├── server.py
-│   ├── topic_check.py
-│   └── templates
-│       └── status.html
-└── producers
-    ├── connector.py *
-    ├── models
-    │   ├── line.py
-    │   ├── producer.py *
-    │   ├── schemas
-    │   │   ├── arrival_key.json
-    │   │   ├── arrival_value.json *
-    │   │   ├── turnstile_key.json
-    │   │   ├── turnstile_value.json *
-    │   │   ├── weather_key.json
-    │   │   └── weather_value.json *
-    │   ├── station.py *
-    │   ├── train.py
-    │   ├── turnstile.py *
-    │   ├── turnstile_hardware.py
-    │   └── weather.py *
-    ├── requirements.txt
-    └── simulation.py
-```
+Uses Avro key and value schemas.
 
-## Running and Testing
+Creates topics if they do not already exist.
 
-To run the simulation, you must first start up the Kafka ecosystem on their machine utilizing Docker Compose.
+Encapsulates common logic in a reusable Producer base class.
 
-```%> docker-compose up```
+2. Kafka Connect (JDBC Source Connector)
 
-Docker compose will take a 3-5 minutes to start, depending on your hardware. Please be patient and wait for the docker-compose logs to slow down or stop before beginning the simulation.
+Kafka Connect is used to load station metadata from a PostgreSQL database into Kafka.
 
-Once docker-compose is ready, the following services will be available:
+The JDBC Source Connector connects to the cta database.
 
-| Service | Host URL | Docker URL | Username | Password |
-| --- | --- | --- | --- | --- |
-| Public Transit Status | [http://localhost:8888](http://localhost:8888) | n/a | ||
-| Landoop Kafka Connect UI | [http://localhost:8084](http://localhost:8084) | http://connect-ui:8084 |
-| Landoop Kafka Topics UI | [http://localhost:8085](http://localhost:8085) | http://topics-ui:8085 |
-| Landoop Schema Registry UI | [http://localhost:8086](http://localhost:8086) | http://schema-registry-ui:8086 |
-| Kafka | PLAINTEXT://localhost:9092,PLAINTEXT://localhost:9093,PLAINTEXT://localhost:9094 | PLAINTEXT://kafka0:9092,PLAINTEXT://kafka1:9093,PLAINTEXT://kafka2:9094 |
-| REST Proxy | [http://localhost:8082](http://localhost:8082/) | http://rest-proxy:8082/ |
-| Schema Registry | [http://localhost:8081](http://localhost:8081/ ) | http://schema-registry:8081/ |
-| Kafka Connect | [http://localhost:8083](http://localhost:8083) | http://kafka-connect:8083 |
-| KSQL | [http://localhost:8088](http://localhost:8088) | http://ksql:8088 |
-| PostgreSQL | `jdbc:postgresql://localhost:5432/cta` | `jdbc:postgresql://postgres:5432/cta` | `cta_admin` | `chicago` |
+It reads from the stations table.
 
-Note that to access these services from your own machine, you will always use the `Host URL` column.
+It uses incrementing mode on the stop_id column.
 
-When configuring services that run within Docker Compose, like **Kafka Connect you must use the Docker URL**. When you configure the JDBC Source Kafka Connector, for example, you will want to use the value from the `Docker URL` column.
+Records are written into a Kafka topic with a CTA-specific prefix.
 
-### Running the Simulation
+This allows the rest of the system to treat station metadata as a stream of records rather than static data.
 
-There are two pieces to the simulation, the `producer` and `consumer`. As you develop each piece of the code, it is recommended that you only run one piece of the project at a time.
+3. Stream Processing with Faust
 
-However, when you are ready to verify the end-to-end system prior to submission, it is critical that you open a terminal window for each piece and run them at the same time. **If you do not run both the producer and consumer at the same time you will not be able to successfully complete the project**.
+Faust is used to clean and enrich station metadata:
 
-#### To run the `producer`:
+It consumes station records produced by Kafka Connect.
 
-1. `cd producers`
-2. `virtualenv venv`
-3. `. venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. `python simulation.py`
+It maps each record into a strongly typed Station model.
 
-Once the simulation is running, you may hit `Ctrl+C` at any time to exit.
+It determines the line color (red, green, or blue) based on boolean flags and normalizes the data.
 
-#### To run the Faust Stream Processing Application:
-1. `cd consumers`
-2. `virtualenv venv`
-3. `. venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. `faust -A faust_stream worker -l info`
+It maintains a Faust table representing the latest state of all stations.
 
+It publishes a transformed station topic that is easier for downstream consumers to work with.
 
-#### To run the KSQL Creation Script:
-1. `cd consumers`
-2. `virtualenv venv`
-3. `. venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. `python ksql.py`
+This step isolates schema quirks and ensures the consumer and web UI see a consistent station representation.
 
-#### To run the `consumer`:
+4. Aggregation with KSQL
 
-** NOTE **: Do not run the consumer until you have reached Step 6!
-1. `cd consumers`
-2. `virtualenv venv`
-3. `. venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. `python server.py`
+KSQL runs continuous queries on the turnstile event stream to maintain station-level rider counts:
 
-Once the server is running, you may hit `Ctrl+C` at any time to exit.
+A KSQL stream is defined over the raw turnstile events topic.
+
+A KSQL table aggregates events by station, counting total entries per station.
+
+The result is materialized as a table topic (for example, TURNSTILE_SUMMARY).
+
+This provides an always-up-to-date view of ridership without needing to manually maintain counters in application code.
+
+5. Consumers and Web Application
+
+On the consumer side, the project includes:
+
+A generic Kafka consumer that:
+
+Subscribes to weather, station table, arrival, and turnstile summary topics.
+
+Can consume Avro and JSON payloads.
+
+Uses an asynchronous polling loop to keep models in sync with Kafka.
+
+Domain models:
+
+Weather model
+Stores current temperature and status.
+
+Station model
+Stores station metadata, current trains in each direction, and accumulated turnstile entries.
+
+Line model
+Manages a collection of stations for a given line color (red, green, blue) and updates them based on messages.
+
+Lines wrapper
+Routes incoming messages to the appropriate line or to all lines, depending on topic.
+
+A web server backed by Tornado:
+
+Uses the in-memory line, station, and weather models.
+
+Serves a transit status page that shows:
+
+Stations grouped by line,
+
+Current train positions and statuses (by direction),
+
+Turnstile entry counts,
+
+Current weather conditions.
+
+### End-to-End Data Flow
+
+Station information is loaded from PostgreSQL into Kafka via Kafka Connect.
+
+Faust consumes the station topic, transforms records, and writes back a normalized station table topic.
+
+The simulation produces train arrival and turnstile events into Kafka topics.
+
+KSQL reads turnstile events, maintains a station-level count, and publishes an aggregated summary.
+
+A consumer service subscribes to:
+
+The Faust-transformed station table,
+
+The arrival events,
+
+The KSQL turnstile summary,
+
+The weather topic.
+
+The consumer updates in-memory models used by the web server.
+
+The web UI queries these models to render a real-time view of the CTA network.
+
+### What This Project Demonstrates
+
+Designing an event-driven architecture for a real-time system.
+
+Modeling domain events (arrivals, turnstiles, weather) using Avro.
+
+Using Kafka Connect to bridge a relational database into Kafka.
+
+Applying stream processing (Faust) for transformation and normalization.
+
+Using KSQL for continuous aggregation and materialized views.
+
+Integrating Kafka consumers with a web application to power a live dashboard.
